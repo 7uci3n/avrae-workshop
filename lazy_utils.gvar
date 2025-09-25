@@ -1,0 +1,18 @@
+# lazy_utils
+# This module contains common variables and functions for LazyLucien's aliases
+#
+# get_char(): call this to get either the current active character, or False if none is loaded
+
+def get_char():
+    if not character().levels:
+        c = False
+    else:
+        c = character()
+    return c
+
+def get_int(number):
+    try:
+        val = int(number)
+    except ("ValueError", "TypeError"):
+        val = 0
+    return val

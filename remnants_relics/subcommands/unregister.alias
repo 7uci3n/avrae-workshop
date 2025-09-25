@@ -1,0 +1,23 @@
+<drac2>
+using(
+    lazy_utils="7ecda6a2-3b20-42cf-a053-b4231bb68563",
+    rdt_utils="8df316c1-d5f2-4724-aff1-3ed552530a85"
+)
+
+args = &ARGS&
+chname = ""
+output = f''
+
+c = lazy_utils.get_char()
+dt = rdt_utils.get_dt()
+
+if c and len(args) == 0:
+    output += rdt_utils.del_dt(dt,c.name.lower())
+elif len(args) > 0:
+    chname = args[0].lower()
+    output += rdt_utils.del_dt(dt,chname)
+else:
+    output += f' -f "Oops!|You need to load an active avrae character or explicitly name one manually after the alias."'
+output += rdt_utils.dt_list(chname)
+return f'embed -title "Downtime"{output}'
+</drac2>

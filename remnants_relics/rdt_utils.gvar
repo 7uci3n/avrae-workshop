@@ -1,0 +1,81 @@
+# rdt_utils
+# This module contains common variables and functions for the rdt alias
+#
+# get_dt(): Loads the dt uvar
+# set_dt(var, dtp=0, timstamp=(int)time(), auth=False, gain=0): Adds to the downtime points and saves the uvar
+# migrate_values(): Checks for existing dt variable on character level and migfrates it to user level
+
+def get_dt():
+    set_uvar_nx('remnant_downtime','{}')
+    dt = load_json(get_uvar('remnant_downtime'))
+    return dt
+
+def set_dt(dt, chname="", tstamp=int(time()), auth=False, gain=0):
+    output = f''
+    ts = tstamp - (tstamp % 86400)
+    if chname != "":
+        if chname in dt.keys():
+            redeem = int((ts - dt[chname]["tstamp"]) / 86400)
+            if redeem != 0:
+                dt[chname]["tstamp"] = ts
+                dt[chname]["dt"] += redeem
+                output += f' -f "RDT Redeemed|{chname} redeemed {redeem} day(s) of downtime."'
+            if gain > 0 and auth:
+                dt[chname]["dt"] += gain
+                output += f' -f "RDT Gained|{chname} gained {gain} DTP, possibly due to chronurgy..."'
+            elif gain < 0:
+                if gain * -1 > dt[chname]["dt"]:
+                    output += f' -f "Oops!|{chname} does not have {gain} DTP to spend, only {dt[chname]["dt"]}."'
+                else:
+                    dt[chname]["dt"] += gain
+                    output += f' -f "RDT Spent|{chname} spent {gain * -1} DTP on something truly important."'
+        else:
+            dt[chname] = {"dt":0,"tstamp":ts}
+            output = f' -f "Registered|{chname} was registered for downtime!"'
+    set_uvar('remnant_downtime',dump_json(dt))
+    return output
+
+def del_dt(dt, chname):
+    output = f''
+    if chname != "":
+        pop = dt.pop(chname, None)
+        if pop:
+            set_dt(dt)
+            output += f' -f "Unregistered|{chname} was unregistered from downtime."'
+        else:
+            output += f' -f "Oops!|{chname} is not a registered character."'
+    return output
+
+def migrate_rdt_data(c=False):
+    output = f''
+    if c:
+        chname = c.name.lower()
+        if c.get_cvar("remnant_downtime", None):
+            cvar = load_json(c.get_cvar("remnant_downtime"))
+            uvar = get_dt()
+            if chname in uvar.keys():
+                if uvar[chname]["dt"] < cvar["dt"] and uvar[chname]["tstamp"] >= cvar["tstamp"]:
+                    uvar[chname] = cvar
+            else:
+                uvar[chname] = cvar
+            output = set_dt(uvar, chname)
+            c.delete_cvar("remnant_downtime")
+            output += f' -f "Character Migrated|Data for {chname} was automatically migrated to user level tracking."'
+    return output
+
+def dt_list(chname=""):
+    dt = get_dt()
+    chlist = f' -f "DTP Overview|'
+    chcount = 0
+    if chname in dt.keys():
+        chlist += f'**{chname} ({dt[chname]["dt"]})**\n'
+        chcount += 1
+    for ch in dt:
+        if chcount < 10 and ch != chname:
+            chlist += f'{ch} ({dt[ch]["dt"]})\n'
+            chcount += 1
+        elif chcount == 10:
+            chlist += f'[...]'
+            break
+    chlist += f'"'
+    return chlist

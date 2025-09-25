@@ -1,0 +1,34 @@
+<drac2>
+using(
+    lazy_utils="7ecda6a2-3b20-42cf-a053-b4231bb68563",
+    rdt_utils="8df316c1-d5f2-4724-aff1-3ed552530a85"
+)
+
+args = &ARGS&
+chname = ""
+auth = False
+gain = 0
+output = f''
+
+for role in ctx.author.get_roles():
+    if role.name in ["Crew", "Admins", "Technomancer", "DTP_edit"]: auth = True
+
+c = lazy_utils.get_char()
+output += rdt_utils.migrate_rdt_data(c)
+dt = rdt_utils.get_dt()
+if c:
+    chname = c.name.lower()
+    if len(args) > 0:
+        gain = lazy_utils.get_int(args[0])
+if not c or gain == 0:
+    if not c and len(args) == 0: return f'embed -title "Remnant Downtime" -f "Oops!|You need to load an active avrae character or explicitly name one manually after the alias."'
+    if len(args) > 0:
+        chname = args[0].lower()
+    if len(args) > 1:
+        gain = lazy_utils.get_int(args[1])
+
+output += rdt_utils.set_dt(dt=dt, chname=chname, auth=auth, gain=gain)
+output += rdt_utils.dt_list(chname)
+
+return f'embed -title "Remnant Downtime"{output}'
+</drac2>
